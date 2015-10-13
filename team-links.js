@@ -1,7 +1,6 @@
-var casper = require('casper').create(),
-    links = [];
+var casper = require('casper').create();
 
-function getLinks() {
+function getTeamLinks() {
   var links = document.querySelectorAll('.css-panes a');
   var out = [];
   for (var j=0; j<links.length; j++) {
@@ -10,36 +9,52 @@ function getLinks() {
   return out;
 }
 
-function getStats() {
-  var stats = document.querySelectorAll(".mytable tbody");
-  return stats;
+function getTeamStats() {
+  var stats = document.createElement('div'),
+      category = [];
+  
+  stats.innerHTML = document.querySelector('.contentArea table').innerHTML;
+  category = stats.querySelectorAll('table');
+
+  var out = [];
+  for (var j=0; j<category.length; j++) {
+    out[j] = document.createElement('div');
+    out[j].innerHTML = category[j].innerHTML;
+  }
+  return out;
 }
 
-casper.start('http://stats.ncaa.org/team/inst_team_list/12240?division=11.0', function() {
-  this.echo(this.getTitle());
-  links = this.evaluate(getLinks);
-  for (var j=0; j<links.length; j++) {
-    this.echo(links[j]);
+function parseStatistic(table) {
+  //var rows = table.querySelectorAll('tr');
+  return table.innerHTML;
+  
+  var out = [];
+  for (var j=0; j<rows.length; j++) {
+    out[j] = rows[j].innerHTML;
   }
-    //this.capture('webpage.png');
+  return out;
+}
+
+var team_links;
+
+casper.start('http://stats.ncaa.org/team/inst_team_list/12240?division=11.0', function() {
+  team_links = this.evaluate(getTeamLinks);
 });
 
 casper.then(function() {
-  var j = 0;
-  this.each(links, function() {
-    j++;
-    this.echo(links[j]);
-    this.thenOpen(links[j], function() {
-      this.echo(this.evaluate(getStats).length);
+  var stats;
+  for (var j=0; j<team_links.length; j++) {
+    this.echo(team_links[j]);
+    this.thenOpen(team_links[j], function() {
+      stats = this.evaluate(getTeamStats);
+      for (var k=0; k<stats.length; k++) {
+        var data = this.evaluate(parseStatistic, stats[k]);
+        this.echo("RZA");
+        this.echo(data);
+      }
     });
-  });
+  }
 });
-
-/*
-casper.then(function() {
-  links = links.concat(this.evaluate(getLinks));
-});
-*/
 
 casper.run(function() {
   //this.echo(links.length + ' links found.');
